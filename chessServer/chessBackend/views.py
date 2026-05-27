@@ -126,3 +126,48 @@ def get_openings_by_result(request, username: str):
     except Exception as e:
         return JsonResponse({'error': f'Internal err: {str(e)}'}, status=500)
     
+def get_month_games(request, username: str):
+    current_year = th.TimeHandler.get_year_str()
+    current_month = th.TimeHandler.get_month_str()
+    user_lower = username.lower()
+    
+    url = f"https://api.chess.com/pub/player/{username}/games/{current_year}/{current_month}"
+    headers = {'User-Agent': 'chesstats-app (your@email.com)'}
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=5)
+        
+        if response.status_code != 200:
+            return JsonResponse({'error': 'Couldnt download games'}, status=response.status_code)
+        
+        raw_data = response.json()
+        game_list = raw_data.get('games', [])
+        if not game_list:
+            return JsonResponse({'error': 'No games played this month'}, status=404)
+        
+        games_dict = {}
+        count = 1
+        
+        for game in game_list:
+            if game.get('white', {}).get('username', '').lower() == user_lower:
+                opponent = game.get('black', {}).get('username', '')
+                result = game.get('white', {}).get('result', '')
+            elif game.get('black', {}).get('username', '').lower() == user_lower:
+                opponent = game.get('white', {}).get('username', '')
+                result = game.get('black', {}).get('result', '')
+            else:
+                continue
+            
+            games_dict[count] = {
+                'tempo': game.get('time_class', ''),
+                'result': result,
+                'opening': oc.MonthsOpenings.processed_opening_name(game.get('eco')),
+                'vs': opponent
+            }
+            count += 1
+        
+        return JsonResponse(games_dict)
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    except Exception as e:
+        return JsonResponse({'error': f'Internal err: {str(e)}'}, status=500)

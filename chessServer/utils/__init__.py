@@ -11,9 +11,6 @@ print(json.dumps(parsed, indent=4))
 """
 
 def processed_opening_name(opening_url: str):
-    raw_name = opening_url.split('/openings/')[-1]
+    raw_name = opening_url.split('/')[-1]
     words_list = raw_name.split('-')
     return " ".join(words_list)
-                
-                
-print(processed_opening_name("https://www.chess.com/openings/Kings-Pawn-Opening-Kings-Knight-Variation"))
