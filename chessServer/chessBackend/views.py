@@ -1,5 +1,8 @@
 import requests
 from django.http import JsonResponse, HttpResponse
+import json
+from django.views.decorators.csrf import csrf_exempt
+import utils.chess_analyzer as ca 
 import utils.time_handler as th
 import utils.rank_check as rc
 import utils.opening_classifier as oc
@@ -171,3 +174,29 @@ def get_month_games(request, username: str):
         return JsonResponse({'error': str(e)}, status=500)
     except Exception as e:
         return JsonResponse({'error': f'Internal err: {str(e)}'}, status=500)
+
+@csrf_exempt
+def analyze_game_accuracy(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Wrong method, POST expected.'}, status=405)
+        
+    try:
+        data = json.loads(request.body)
+        pgn_text = data.get('pgn', '')
+        
+        if not pgn_text:
+            return JsonResponse({'error': 'No PGN in request.'}, status=400)
+            
+        accuracy = ca.ChessAnalyzer.get_accuracies(pgn_text)
+        
+        return JsonResponse(
+            {
+                'status': 'success',
+                'accuracy': accuracy
+            }
+        )
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Incorrect JSON format.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Stockfish error: {str(e)}'}, status=500)

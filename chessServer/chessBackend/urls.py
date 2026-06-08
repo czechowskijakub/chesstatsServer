@@ -8,4 +8,5 @@ urlpatterns = [
     path('stats/<str:username>/', views.get_chess_api, name='get_stats'),
     path('mostplayed/<str:username>/', views.get_openings_by_result, name='get_openings'),
     path('games/<str:username>/', views.get_month_games, name='get_games'),
+    path('analyze/', views.analyze_game_accuracy, name='analyze_game')
 ]
